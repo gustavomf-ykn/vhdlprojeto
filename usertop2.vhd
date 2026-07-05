@@ -25,7 +25,7 @@ architecture completo of usertop2 is
     signal rodada: std_logic_vector(3 downto 0) := "1111";
     signal tempo: std_logic_vector(3 downto 0) := "0000";
     signal end_time, end_game, end_round: std_logic := '0';
-    signal result: std_logic_vector(7 downto 0);
+    signal score: std_logic_vector(7 downto 0);
 
     function seg7(g: std_logic_vector(3 downto 0)) return std_logic_vector is
     begin
@@ -53,31 +53,31 @@ architecture completo of usertop2 is
     begin
         case s(1 downto 0) is
             when "00" =>
-                case s(3 downto 2) is
+                case s(5 downto 4) is
                     when "00" => return x"0123";
-                    when "01" => return x"0213";
-                    when "10" => return x"1032";
-                    when others => return x"2301";
+                    when "01" => return x"0123";
+                    when "10" => return x"0246";
+                    when others => return x"1234";
                 end case;
             when "01" =>
-                case s(3 downto 2) is
-                    when "00" => return x"0123";
+                case s(5 downto 4) is
+                    when "00" => return x"0213";
                     when "01" => return x"1350";
-                    when "10" => return x"2405";
-                    when others => return x"5432";
+                    when "10" => return x"1357";
+                    when others => return x"5790";
                 end case;
             when "10" =>
-                case s(3 downto 2) is
-                    when "00" => return x"0246";
-                    when "01" => return x"1357";
+                case s(5 downto 4) is
+                    when "00" => return x"1032";
+                    when "01" => return x"2405";
                     when "10" => return x"7654";
-                    when others => return x"6273";
+                    when others => return x"2468";
                 end case;
             when others =>
-                case s(3 downto 2) is
-                    when "00" => return x"1234";
-                    when "01" => return x"5790";
-                    when "10" => return x"2468";
+                case s(5 downto 4) is
+                    when "00" => return x"2301";
+                    when "01" => return x"5432";
+                    when "10" => return x"6273";
                     when others => return x"7081";
                 end case;
         end case;
@@ -121,7 +121,7 @@ begin
     p <= pos_certa(code, user);
     e <= existe_pos_errada(code, user);
     end_game <= '1' when p = "100" else '0';
-    result <= "000" & end_game & (rodada and not(end_time & end_time & end_time & end_time));
+    score <= "000" & end_game & (rodada and not(end_time & end_time & end_time & end_time));
 
     process(CLK_500Hz)
     begin
@@ -191,7 +191,7 @@ begin
         end if;
     end process;
 
-    process(EA, sel, user, code, p_reg, e_reg, tempo, result, rodada)
+    process(EA, sel, user, code, p_reg, e_reg, tempo, score, rodada)
     begin
         HEX0 <= "1111111"; HEX1 <= "1111111"; HEX2 <= "1111111"; HEX3 <= "1111111";
         HEX4 <= "1111111"; HEX5 <= "1111111"; HEX6 <= "1111111"; HEX7 <= "1111111";
@@ -203,7 +203,7 @@ begin
             when WAITT =>
                 HEX3 <= "0001100"; HEX2 <= seg7('0' & p_reg); HEX1 <= "0000110"; HEX0 <= seg7('0' & e_reg);
             when RESULT =>
-                HEX7 <= seg7(result(7 downto 4)); HEX6 <= seg7(result(3 downto 0)); HEX3 <= seg7(code(15 downto 12)); HEX2 <= seg7(code(11 downto 8)); HEX1 <= seg7(code(7 downto 4)); HEX0 <= seg7(code(3 downto 0));
+                HEX7 <= seg7(score(7 downto 4)); HEX6 <= seg7(score(3 downto 0)); HEX3 <= seg7(code(15 downto 12)); HEX2 <= seg7(code(11 downto 8)); HEX1 <= seg7(code(7 downto 4)); HEX0 <= seg7(code(3 downto 0));
             when others => null;
         end case;
     end process;
