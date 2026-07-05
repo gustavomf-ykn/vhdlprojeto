@@ -25,7 +25,7 @@ architecture completo of usertop is
     signal rodada: std_logic_vector(3 downto 0) := "1111";
     signal tempo: std_logic_vector(3 downto 0) := "0000";
     signal end_time, end_game, end_round: std_logic := '0';
-    signal result: std_logic_vector(7 downto 0);
+    signal score: std_logic_vector(7 downto 0);
 
     function seg7(g: std_logic_vector(3 downto 0)) return std_logic_vector is
     begin
@@ -121,7 +121,7 @@ begin
     p <= pos_certa(code, user);
     e <= existe_pos_errada(code, user);
     end_game <= '1' when p = "100" else '0';
-    result <= "000" & end_game & (rodada and not(end_time & end_time & end_time & end_time));
+    score <= "000" & end_game & (rodada and not(end_time & end_time & end_time & end_time));
 
     process(CLK_500Hz)
     begin
@@ -164,18 +164,33 @@ begin
     process(CLK_500Hz, reset_pulse)
     begin
         if reset_pulse = '1' then
-            sel <= (others => '0'); user <= (others => '0'); p_reg <= (others => '0'); e_reg <= (others => '0'); rodada <= "1111"; end_round <= '0';
+            sel <= (others => '0');
+            user <= (others => '0');
+            p_reg <= (others => '0');
+            e_reg <= (others => '0');
+            rodada <= "1111";
+            end_round <= '0';
         elsif rising_edge(CLK_500Hz) then
             if EA = INIT then
-                sel <= (others => '0'); user <= (others => '0'); p_reg <= (others => '0'); e_reg <= (others => '0'); rodada <= "1111"; end_round <= '0';
+                sel <= (others => '0');
+                user <= (others => '0');
+                p_reg <= (others => '0');
+                e_reg <= (others => '0');
+                rodada <= "1111";
+                end_round <= '0';
             elsif EA = SETUP then
                 sel <= SW(5 downto 0);
             elsif EA = PLAY then
                 user <= SW(15 downto 0);
             elsif EA = COUNT_ROUND then
-                if rodada = "0000" then end_round <= '1'; else rodada <= rodada - 1; end if;
+                if rodada = "0000" then
+                    end_round <= '1';
+                else
+                    rodada <= rodada - 1;
+                end if;
             elsif EA = WAITT then
-                p_reg <= p; e_reg <= e;
+                p_reg <= p;
+                e_reg <= e;
             end if;
         end if;
     end process;
@@ -183,27 +198,48 @@ begin
     process(CLK_1Hz, reset_pulse, EA)
     begin
         if reset_pulse = '1' or EA = INIT or EA = COUNT_ROUND or EA = CHECK or EA = WAITT then
-            tempo <= "0000"; end_time <= '0';
+            tempo <= "0000";
+            end_time <= '0';
         elsif rising_edge(CLK_1Hz) then
             if EA = PLAY then
-                if tempo = "1001" then end_time <= '1'; else tempo <= tempo + 1; end if;
+                if tempo = "1001" then
+                    end_time <= '1';
+                else
+                    tempo <= tempo + 1;
+                end if;
             end if;
         end if;
     end process;
 
-    process(EA, sel, user, code, p_reg, e_reg, tempo, result, rodada)
+    process(EA, sel, user, code, p_reg, e_reg, tempo, score, rodada)
     begin
         HEX0 <= "1111111"; HEX1 <= "1111111"; HEX2 <= "1111111"; HEX3 <= "1111111";
         HEX4 <= "1111111"; HEX5 <= "1111111"; HEX6 <= "1111111"; HEX7 <= "1111111";
         case EA is
             when SETUP =>
-                HEX3 <= "1000110"; HEX2 <= seg7(sel(5 downto 2)); HEX1 <= "1000111"; HEX0 <= seg7("00" & sel(1 downto 0));
+                HEX3 <= "1000110";
+                HEX2 <= seg7(sel(5 downto 2));
+                HEX1 <= "1000111";
+                HEX0 <= seg7("00" & sel(1 downto 0));
             when PLAY =>
-                HEX5 <= "0000111"; HEX4 <= seg7(tempo); HEX3 <= seg7(user(15 downto 12)); HEX2 <= seg7(user(11 downto 8)); HEX1 <= seg7(user(7 downto 4)); HEX0 <= seg7(user(3 downto 0));
+                HEX5 <= "0000111";
+                HEX4 <= seg7(tempo);
+                HEX3 <= seg7(user(15 downto 12));
+                HEX2 <= seg7(user(11 downto 8));
+                HEX1 <= seg7(user(7 downto 4));
+                HEX0 <= seg7(user(3 downto 0));
             when WAITT =>
-                HEX3 <= "0001100"; HEX2 <= seg7('0' & p_reg); HEX1 <= "0000110"; HEX0 <= seg7('0' & e_reg);
+                HEX3 <= "0001100";
+                HEX2 <= seg7('0' & p_reg);
+                HEX1 <= "0000110";
+                HEX0 <= seg7('0' & e_reg);
             when RESULT =>
-                HEX7 <= seg7(result(7 downto 4)); HEX6 <= seg7(result(3 downto 0)); HEX3 <= seg7(code(15 downto 12)); HEX2 <= seg7(code(11 downto 8)); HEX1 <= seg7(code(7 downto 4)); HEX0 <= seg7(code(3 downto 0));
+                HEX7 <= seg7(score(7 downto 4));
+                HEX6 <= seg7(score(3 downto 0));
+                HEX3 <= seg7(code(15 downto 12));
+                HEX2 <= seg7(code(11 downto 8));
+                HEX1 <= seg7(code(7 downto 4));
+                HEX0 <= seg7(code(3 downto 0));
             when others => null;
         end case;
     end process;
