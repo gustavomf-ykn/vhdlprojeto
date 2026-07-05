@@ -25,6 +25,7 @@ architecture completo of usertop is
     signal rodada: std_logic_vector(3 downto 0) := "1111";
     signal tempo: std_logic_vector(3 downto 0) := "0000";
     signal end_time: std_logic := '0';
+    signal timed_out: std_logic := '0';
     signal score: std_logic_vector(7 downto 0);
 
     function seg7(g: std_logic_vector(3 downto 0)) return std_logic_vector is
@@ -168,7 +169,7 @@ architecture completo of usertop is
 begin
     code <= segredo(sel);
     score <= ("000" & '1' & rodada) when p_reg = "100" else
-             ("000" & '0' & rodada) when end_time = '0' else
+             ("000" & '0' & rodada) when timed_out = '0' else
              "00000000";
 
     process(CLK_500Hz)
@@ -201,6 +202,7 @@ begin
                 p_reg <= (others => '0');
                 e_reg <= (others => '0');
                 rodada <= "1111";
+                timed_out <= '0';
             else
                 case EA is
                     when INIT =>
@@ -209,10 +211,12 @@ begin
                         p_reg <= (others => '0');
                         e_reg <= (others => '0');
                         rodada <= "1111";
+                        timed_out <= '0';
                         EA <= SETUP;
 
                     when SETUP =>
                         sel <= SW(5 downto 0);
+                        timed_out <= '0';
                         if enter_now = '1' then
                             user <= (others => '0');
                             p_reg <= (others => '0');
@@ -222,16 +226,18 @@ begin
 
                     when PLAY =>
                         user <= SW(15 downto 0);
-                        if end_time = '1' then
-                            EA <= RESULT;
-                        elsif enter_now = '1' then
+                        if enter_now = '1' then
                             p_reg <= p_now;
                             e_reg <= e_now;
+                            timed_out <= '0';
                             if p_now = "100" then
                                 EA <= RESULT;
                             else
                                 EA <= COUNT_ROUND;
                             end if;
+                        elsif end_time = '1' then
+                            timed_out <= '1';
+                            EA <= RESULT;
                         end if;
 
                     when COUNT_ROUND =>
